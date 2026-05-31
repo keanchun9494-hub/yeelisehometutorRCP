@@ -57,11 +57,7 @@ body { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--i
 .field input, .field select { width: 100%; padding: 11px 13px; border: 1.5px solid var(--border); border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--ink); background: var(--surface); -webkit-appearance: none; appearance: none; transition: border-color 0.15s; }
 .field input:focus, .field select:focus { outline: none; border-color: var(--accent-mid); }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 
-/* Month paid for — calendar style selectors */
-.month-picker { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-.month-picker select { padding: 11px 8px; font-size: 14px; }
 
 /* FEE DISPLAY */
 .fee-summary { background: var(--accent-bg); border: 1px solid #b7e4c7; border-radius: 12px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
@@ -207,25 +203,7 @@ body { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--i
         </select>
       </div>
     </div>
-    <div class="field">
-      <label>Month paid for</label>
-      <div class="month-picker">
-        <select id="payMonthDay">
-          <!-- days 1-31 filled by JS -->
-        </select>
-        <select id="payMonthMonth">
-          <option value="1">January</option><option value="2">February</option>
-          <option value="3">March</option><option value="4">April</option>
-          <option value="5">May</option><option value="6">June</option>
-          <option value="7">July</option><option value="8">August</option>
-          <option value="9">September</option><option value="10">October</option>
-          <option value="11">November</option><option value="12">December</option>
-        </select>
-        <select id="payMonthYear">
-          <!-- years filled by JS -->
-        </select>
-      </div>
-    </div>
+
     <div class="row2">
       <div class="field">
         <label>Tuition fee (RM)</label>
@@ -235,6 +213,10 @@ body { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--i
         <label>Book fee (RM)</label>
         <input type="number" id="bookFee" placeholder="0 if none" min="0" step="0.01" oninput="updateTotal()">
       </div>
+    </div>
+    <div class="field">
+      <label>Payment details <span style="font-size:10px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink3)">(optional)</span></label>
+      <input type="text" id="payDetails" placeholder="e.g. Ref no. 12345 / remarks" autocomplete="off">
     </div>
   </div>
 
@@ -447,7 +429,7 @@ body { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--i
 // ════════════════════════════════════════════════
 var CONFIG = {
   center:   'Yeelise Home Tutor',   // e.g. 'Cikgu Alia Online Tuition'
-  tagline:  '',      // e.g. 'Online Tuition Center'
+  tagline:  'Online Tuition Center',      // e.g. 'Online Tuition Center'
   sheetUrl: ''                            // Paste your Apps Script Web App URL here
 };
 // ════════════════════════════════════════════════
@@ -477,44 +459,12 @@ function saveSettings() {
   updateSheetStatus();
 }
 
-// ── MONTH PICKER INIT ──
-function initMonthPicker() {
-  // Days 1–31
-  var dayEl = document.getElementById('payMonthDay');
-  dayEl.innerHTML = '';
-  for (var d = 1; d <= 31; d++) {
-    var o = document.createElement('option');
-    o.value = d; o.textContent = d;
-    dayEl.appendChild(o);
-  }
-  // Years: 3 years back to 3 ahead
-  var yearEl = document.getElementById('payMonthYear');
-  yearEl.innerHTML = '';
-  var cur = new Date().getFullYear();
-  for (var y = cur - 3; y <= cur + 3; y++) {
-    var o2 = document.createElement('option');
-    o2.value = y; o2.textContent = y;
-    if (y === cur) o2.selected = true;
-    yearEl.appendChild(o2);
-  }
-}
 
-function getMonthLabel() {
-  var day = document.getElementById('payMonthDay').value;
-  var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  var month = monthNames[parseInt(document.getElementById('payMonthMonth').value) - 1];
-  var year = document.getElementById('payMonthYear').value;
-  return day + ' ' + month + ' ' + year;
-}
 
 // ── INIT ──
 window.addEventListener('load', function() {
-  initMonthPicker();
   var today = new Date();
   document.getElementById('payDate').value = today.toISOString().split('T')[0];
-  document.getElementById('payMonthDay').value = today.getDate();
-  document.getElementById('payMonthMonth').value = today.getMonth() + 1;
-  document.getElementById('payMonthYear').value = today.getFullYear();
 
   // Always load merged settings (CONFIG defaults + any local overrides)
   var s = getSettings();
@@ -566,10 +516,10 @@ function fmt(n) { return 'RM ' + parseFloat(n || 0).toFixed(2); }
 function submitReceipt() {
   var student = document.getElementById('studentName').value.trim();
   var date = document.getElementById('payDate').value;
-  var monthLabel = getMonthLabel();
   var tuition = parseFloat(document.getElementById('tuitionFee').value) || 0;
   var book = parseFloat(document.getElementById('bookFee').value) || 0;
   var method = document.getElementById('payMethod').value;
+  var payDetails = document.getElementById('payDetails').value.trim();
   var s = getSettings();
   var center = s.center || 'Tuition Center';
 
@@ -578,10 +528,10 @@ function submitReceipt() {
   if (tuition <= 0) { toast('⚠️ Please enter tuition fee'); return; }
 
   var receipt = {
-    num: nextNum(), date: date, monthLabel: monthLabel,
+    num: nextNum(), date: date,
     student: student, tuition: tuition, book: book,
-    total: tuition + book, method: method, center: center,
-    tagline: s.tagline || 'Online Tuition Center',
+    total: tuition + book, method: method, payDetails: payDetails,
+    center: center, tagline: s.tagline || 'Online Tuition Center',
     savedAt: new Date().toISOString()
   };
 
@@ -635,8 +585,8 @@ function buildPreviewHTML(r) {
   if (r.book > 0) rows += '<tr><td style="padding:8px 0;font-size:13.5px">Book Fee</td><td style="text-align:right;font-weight:500;font-size:13.5px">' + fmt(r.book) + '</td></tr>';
   return '<div style="background:var(--bg);border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.8;color:var(--ink2);margin-bottom:12px">' +
     '<div style="font-weight:500;color:var(--ink)">' + r.student + '</div>' +
-    '<div style="color:var(--ink3);font-size:12px">' + r.num + ' · ' + (r.monthLabel || r.month || '') + ' · ' + fmtDate(r.date) + '</div>' +
-    '<div style="color:var(--ink3);font-size:12px">' + r.method + '</div>' +
+    '<div style="color:var(--ink3);font-size:12px">' + r.num + ' · ' + fmtDate(r.date) + '</div>' +
+    '<div style="color:var(--ink3);font-size:12px">' + r.method + (r.payDetails ? ' · ' + r.payDetails : '') + '</div>' +
     '</div>' +
     '<table style="width:100%;border-collapse:collapse"><tbody>' + rows + '</tbody></table>' +
     '<div style="display:flex;justify-content:flex-end;margin-top:10px">' +
@@ -650,16 +600,15 @@ function buildPreviewHTML(r) {
 // ── PRINT & PDF ──
 function buildPrintHTML(r) {
   var bookRow = r.book > 0 ? '<tr><td>Book Fee</td><td>' + fmt(r.book) + '</td></tr>' : '';
-  var monthFor = r.monthLabel || r.month || '';
   return '<div class="pr-top">' +
     '<div><div class="pr-center-name">' + r.center + '</div><div class="pr-center-sub">' + (r.tagline || 'Online Tuition Center') + '</div></div>' +
     '<div><div class="pr-title">Receipt</div><div class="pr-num">' + r.num + '</div></div>' +
     '</div>' +
     '<div class="pr-meta">' +
       '<div class="pr-meta-item"><label>Date</label><div class="v">' + fmtDate(r.date) + '</div></div>' +
-      '<div class="pr-meta-item"><label>For</label><div class="v">' + monthFor + '</div></div>' +
       '<div class="pr-meta-item"><label>Method</label><div class="v">' + r.method + '</div></div>' +
     '</div>' +
+    (r.payDetails ? '<div class="pr-from" style="margin-top:-8px"><label>Payment details</label><div class="v" style="font-size:14px">' + r.payDetails + '</div></div>' : '') +
     '<div class="pr-from"><label>Received from</label><div class="v">' + r.student + '</div></div>' +
     '<table class="pr-table"><thead><tr><th>Description</th><th>Amount</th></tr></thead><tbody>' +
       '<tr><td>Tuition Fee</td><td>' + fmt(r.tuition) + '</td></tr>' + bookRow +
@@ -789,7 +738,7 @@ function renderHistory() {
       '<div class="rcp-icon">🧾</div>' +
       '<div class="rcp-info">' +
         '<div class="rcp-name">' + r.student + '</div>' +
-        '<div class="rcp-meta">' + fmtDate(r.date) + ' · ' + (r.monthLabel || r.month || '') + ' · ' + r.method + '</div>' +
+        '<div class="rcp-meta">' + fmtDate(r.date) + ' · ' + r.method + '</div>' +
       '</div>' +
       '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">' +
         '<div class="rcp-amount">' + fmt(r.total) + '</div>' +
@@ -863,7 +812,7 @@ function renderCsvList() {
       '<div class="select-checkbox checked" id="csvchk-' + r.num.replace(/[^a-z0-9]/gi,'') + '">✓</div>' +
       '<div class="csv-item-info">' +
         '<div class="csv-item-name">' + r.student + '</div>' +
-        '<div class="csv-item-meta">' + r.num + ' · ' + fmtDate(r.date) + ' · ' + (r.monthLabel || r.month || '') + '</div>' +
+        '<div class="csv-item-meta">' + r.num + ' · ' + fmtDate(r.date) + '</div>' +
       '</div>' +
       '<div class="csv-item-amt">' + fmt(r.total) + '</div>' +
     '</div>';
@@ -922,9 +871,9 @@ function doExportCSV() {
   if (!csvSelected.size) { toast('⚠️ Please select at least one receipt'); return; }
   var allReceipts = getReceipts();
   var toExport = allReceipts.filter(function(r) { return csvSelected.has(r.num); });
-  var header = ['Receipt No','Date','Month Paid For','Student Name','Tuition Fee (RM)','Book Fee (RM)','Total (RM)','Payment Method'];
+  var header = ['Receipt No','Date','Student Name','Tuition Fee (RM)','Book Fee (RM)','Total (RM)','Payment Method','Payment Details'];
   var rows = toExport.map(function(r) {
-    return [r.num, r.date, r.monthLabel || r.month || '', r.student, r.tuition.toFixed(2), (r.book||0).toFixed(2), r.total.toFixed(2), r.method];
+    return [r.num, r.date, r.student, r.tuition.toFixed(2), (r.book||0).toFixed(2), r.total.toFixed(2), r.method, r.payDetails || ''];
   });
   var csv = [header].concat(rows).map(function(row) {
     return row.map(function(v) { return '"' + String(v).replace(/"/g,'""') + '"'; }).join(',');
@@ -944,13 +893,11 @@ function clearForm() {
   document.getElementById('studentName').value = '';
   document.getElementById('tuitionFee').value = '';
   document.getElementById('bookFee').value = '';
+  document.getElementById('payDetails').value = '';
   document.getElementById('feeTotal').textContent = 'RM 0.00';
   document.getElementById('feeBreakdown').textContent = '—';
   var today = new Date();
   document.getElementById('payDate').value = today.toISOString().split('T')[0];
-  document.getElementById('payMonthDay').value = today.getDate();
-  document.getElementById('payMonthMonth').value = today.getMonth() + 1;
-  document.getElementById('payMonthYear').value = today.getFullYear();
 }
 
 function toast(msg) {
