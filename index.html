@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Tuition Receipt App</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,400&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --ink: #1c1c1e;
+  --ink2: #48484a;
+  --ink3: #8e8e93;
+  --border: #d1ccc2;
+  --bg: #f2ede4;
+  --surface: #fffdf8;
+  --accent: #2d6a4f;
+  --accent2: #1b4332;
+  --accent-bg: #d8f3dc;
+  --accent-mid: #52b788;
+  --warn: #c0392b;
+  --warn-bg: #fdecea;
+  --card-r: 16px;
+  --btn-r: 10px;
+}
+
+body { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--ink); min-height: 100vh; padding-bottom: 100px; }
+
+/* TOP NAV */
+.topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 20px 12px; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; }
+.app-logo { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: var(--accent2); letter-spacing: -0.02em; }
+.app-logo span { color: var(--accent-mid); }
+.sheets-status { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink3); cursor: pointer; background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 5px 10px; transition: all 0.15s; }
+.sheets-status:hover { background: var(--accent-bg); border-color: var(--accent-mid); }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink3); flex-shrink: 0; }
+.status-dot.connected { background: #27ae60; }
+
+/* BOTTOM TABS */
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); display: flex; z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
+.tab-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 4px 8px; background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 10px; color: var(--ink3); transition: color 0.15s; }
+.tab-btn.active { color: var(--accent); }
+.tab-icon { font-size: 22px; line-height: 1; }
+
+/* PAGES */
+.page { display: none; padding: 16px 16px 0; max-width: 540px; margin: 0 auto; }
+.page.active { display: block; }
+.sect-label { font-size: 10.5px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink3); margin: 20px 0 8px 2px; }
+
+/* CARD */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--card-r); padding: 16px; margin-bottom: 10px; }
+
+/* FORM */
+.field { margin-bottom: 12px; }
+.field label { display: block; font-size: 11px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink3); margin-bottom: 5px; }
+.field input, .field select { width: 100%; padding: 11px 13px; border: 1.5px solid var(--border); border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--ink); background: var(--surface); -webkit-appearance: none; appearance: none; transition: border-color 0.15s; }
+.field input:focus, .field select:focus { outline: none; border-color: var(--accent-mid); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+/* Month paid for — calendar style selectors */
+.month-picker { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.month-picker select { padding: 11px 8px; font-size: 14px; }
+
+/* FEE DISPLAY */
+.fee-summary { background: var(--accent-bg); border: 1px solid #b7e4c7; border-radius: 12px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.fee-label { font-size: 12px; color: var(--accent); font-weight: 500; }
+.fee-total { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: var(--accent2); }
+
+/* BUTTONS */
+.btn { width: 100%; padding: 14px; border-radius: var(--btn-r); border: none; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:active { background: var(--accent2); transform: scale(0.98); }
+.btn-outline { background: var(--surface); color: var(--ink2); border: 1.5px solid var(--border); }
+.btn-outline:active { background: var(--bg); transform: scale(0.98); }
+.btn-sm { width: auto; padding: 7px 14px; font-size: 13px; border-radius: 8px; }
+.btn-danger { background: var(--warn-bg); color: var(--warn); border: 1px solid #f5c6c2; }
+.btn-pdf { background: #fff3e0; color: #e65100; border: 1.5px solid #ffcc80; }
+.btn-pdf:active { background: #ffe0b2; transform: scale(0.98); }
+.btn-print { background: #e8f5e9; color: #2e7d32; border: 1.5px solid #a5d6a7; }
+.btn-print:active { background: #c8e6c9; transform: scale(0.98); }
+
+/* TOAST */
+.toast { position: fixed; top: 70px; left: 50%; transform: translateX(-50%) translateY(-20px); background: var(--ink); color: white; padding: 10px 20px; border-radius: 20px; font-size: 13.5px; font-weight: 500; opacity: 0; transition: all 0.3s; z-index: 999; white-space: nowrap; pointer-events: none; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* HISTORY LIST */
+.receipt-item { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 13px 15px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.15s; }
+.receipt-item:active { background: var(--bg); }
+.receipt-item.selected { border: 2px solid var(--accent-mid); background: var(--accent-bg); }
+.rcp-icon { width: 42px; height: 42px; border-radius: 10px; background: var(--accent-bg); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.rcp-info { flex: 1; min-width: 0; }
+.rcp-name { font-size: 14.5px; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rcp-meta { font-size: 12px; color: var(--ink3); margin-top: 2px; }
+.rcp-num { font-size: 11px; color: var(--accent); font-weight: 500; background: var(--accent-bg); border-radius: 6px; padding: 2px 7px; }
+.rcp-amount { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 600; color: var(--accent2); white-space: nowrap; }
+.select-checkbox { width: 20px; height: 20px; border-radius: 6px; border: 1.5px solid var(--border); background: var(--surface); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px; transition: all 0.15s; }
+.select-checkbox.checked { background: var(--accent); border-color: var(--accent); color: white; }
+
+/* HISTORY FILTER BAR */
+.filter-bar { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; flex-wrap: wrap; }
+.filter-bar select { padding: 7px 10px; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--ink); background: var(--surface); -webkit-appearance: none; appearance: none; }
+.filter-bar select:focus { outline: none; border-color: var(--accent-mid); }
+.sel-count { font-size: 12px; color: var(--accent); font-weight: 500; margin-left: auto; }
+
+.empty-state { text-align: center; padding: 40px 20px; color: var(--ink3); font-size: 14px; line-height: 1.7; }
+
+/* SETTINGS */
+.settings-field { margin-bottom: 14px; }
+.settings-field label { display: block; font-size: 11px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink3); margin-bottom: 5px; }
+.settings-field input { width: 100%; padding: 11px 13px; border: 1.5px solid var(--border); border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--ink); background: var(--surface); }
+.settings-field input:focus { outline: none; border-color: var(--accent-mid); }
+.info-box { background: #eaf4ff; border: 1px solid #b3d4f0; border-radius: 10px; padding: 12px 14px; font-size: 13px; color: #1a527a; line-height: 1.6; margin-bottom: 12px; }
+.code-snippet { background: var(--ink); color: #a8e6a3; border-radius: 10px; padding: 12px 14px; font-family: monospace; font-size: 11.5px; line-height: 1.8; margin: 8px 0 12px; overflow-x: auto; white-space: pre; }
+
+/* MODAL */
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; align-items: flex-end; justify-content: center; }
+.modal-bg.open { display: flex; }
+.modal { background: var(--surface); border-radius: 20px 20px 0 0; padding: 20px 20px 40px; width: 100%; max-width: 540px; max-height: 85vh; overflow-y: auto; }
+.modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
+.modal-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; margin-bottom: 16px; color: var(--ink); }
+.modal-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.action-divider { display: flex; align-items: center; gap: 8px; margin: 2px 0; }
+.action-divider span { font-size: 11px; color: var(--ink3); white-space: nowrap; }
+.action-divider::before, .action-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* CSV SELECTION MODAL */
+.csv-select-all { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+.csv-select-all label { font-size: 13px; font-weight: 500; color: var(--ink); display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.csv-list { max-height: 40vh; overflow-y: auto; margin-bottom: 14px; }
+.csv-item { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid #f0ebe0; cursor: pointer; }
+.csv-item:last-child { border-bottom: none; }
+.csv-item-info { flex: 1; min-width: 0; }
+.csv-item-name { font-size: 13.5px; font-weight: 500; color: var(--ink); }
+.csv-item-meta { font-size: 11.5px; color: var(--ink3); margin-top: 1px; }
+.csv-item-amt { font-size: 13px; font-weight: 500; color: var(--accent2); white-space: nowrap; }
+
+/* PRINT */
+#printArea { display: none; }
+
+@media print {
+  body > *:not(#printArea) { display: none !important; }
+  #printArea { display: block !important; font-family: 'DM Sans', sans-serif; padding: 1.5cm 2cm; color: #1c1c1e; }
+  .pr-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #2d6a4f; }
+  .pr-center-name { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: #1b4332; }
+  .pr-center-sub { font-size: 11px; color: #8e8e93; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 3px; }
+  .pr-title { font-family: 'Playfair Display', serif; font-size: 26px; color: #2d6a4f; }
+  .pr-num { font-size: 11px; color: #8e8e93; font-weight: 500; text-align: right; margin-top: 3px; }
+  .pr-meta { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 20px 0; }
+  .pr-meta-item label { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: #8e8e93; display: block; margin-bottom: 3px; }
+  .pr-meta-item .v { font-size: 14px; font-weight: 500; }
+  .pr-from { margin: 16px 0; padding: 12px 16px; background: #f2ede4; border-radius: 8px; }
+  .pr-from label { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: #8e8e93; display: block; margin-bottom: 3px; }
+  .pr-from .v { font-size: 16px; font-weight: 500; }
+  .pr-table { width: 100%; border-collapse: collapse; margin: 20px 0 10px; }
+  .pr-table th { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: #8e8e93; padding: 6px 0; border-bottom: 1px solid #d1ccc2; text-align: left; }
+  .pr-table th:last-child { text-align: right; }
+  .pr-table td { padding: 10px 0; font-size: 14px; border-bottom: 1px dashed #e0dbd0; }
+  .pr-table td:last-child { text-align: right; font-weight: 500; }
+  .pr-total-row { display: flex; justify-content: flex-end; margin: 10px 0 28px; }
+  .pr-total-box { background: #d8f3dc; border: 1px solid #b7e4c7; border-radius: 8px; padding: 10px 18px; display: flex; gap: 20px; align-items: center; }
+  .pr-total-box .tl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #2d6a4f; font-weight: 500; }
+  .pr-total-box .ta { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: #1b4332; }
+  .pr-footer { display: flex; justify-content: space-between; align-items: flex-end; padding-top: 20px; border-top: 1px solid #d1ccc2; }
+  .pr-note { font-size: 11px; color: #8e8e93; line-height: 1.7; }
+  .pr-sig { text-align: center; }
+  .pr-sig-line { width: 140px; border-bottom: 1px solid #1c1c1e; height: 40px; margin: 0 auto 6px; }
+  .pr-sig-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: #8e8e93; }
+}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="app-logo">Receipt<span>.</span></div>
+  <div class="sheets-status" onclick="goTab('settings')" id="sheetsStatus">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">Setup Sheets</span>
+  </div>
+</div>
+
+<!-- PAGE: NEW RECEIPT -->
+<div class="page active" id="page-new">
+  <div class="sect-label">New receipt</div>
+  <div class="card">
+    <div class="field">
+      <label>Student name</label>
+      <input type="text" id="studentName" placeholder="e.g. Muhammad Aqil bin Ahmad" autocomplete="off">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Date of payment</label>
+        <input type="date" id="payDate">
+      </div>
+      <div class="field">
+        <label>Payment method</label>
+        <select id="payMethod">
+          <option>Cash</option>
+          <option>TNG eWallet</option>
+          <option>Bank Transfer</option>
+          <option>Online Banking</option>
+          <option>DuitNow</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Month paid for</label>
+      <div class="month-picker">
+        <select id="payMonthDay">
+          <!-- days 1-31 filled by JS -->
+        </select>
+        <select id="payMonthMonth">
+          <option value="1">January</option><option value="2">February</option>
+          <option value="3">March</option><option value="4">April</option>
+          <option value="5">May</option><option value="6">June</option>
+          <option value="7">July</option><option value="8">August</option>
+          <option value="9">September</option><option value="10">October</option>
+          <option value="11">November</option><option value="12">December</option>
+        </select>
+        <select id="payMonthYear">
+          <!-- years filled by JS -->
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Tuition fee (RM)</label>
+        <input type="number" id="tuitionFee" placeholder="e.g. 100" min="0" step="0.01" oninput="updateTotal()">
+      </div>
+      <div class="field">
+        <label>Book fee (RM)</label>
+        <input type="number" id="bookFee" placeholder="0 if none" min="0" step="0.01" oninput="updateTotal()">
+      </div>
+    </div>
+  </div>
+
+  <div class="fee-summary">
+    <div>
+      <div class="fee-label">Total amount</div>
+      <div style="font-size:11px;color:var(--accent);margin-top:2px" id="feeBreakdown">—</div>
+    </div>
+    <div class="fee-total" id="feeTotal">RM 0.00</div>
+  </div>
+
+  <button class="btn btn-primary" onclick="submitReceipt()">
+    <span>💾</span> Save &amp; Generate Receipt
+  </button>
+  <div style="height:10px"></div>
+  <button class="btn btn-outline" onclick="clearForm()">Clear form</button>
+</div>
+
+<!-- PAGE: HISTORY -->
+<div class="page" id="page-history">
+  <div class="sect-label">All receipts</div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <select id="filterYear" onchange="renderHistory()">
+      <option value="">All years</option>
+    </select>
+    <select id="filterMonth" onchange="renderHistory()">
+      <option value="">All months</option>
+      <option value="1">January</option><option value="2">February</option>
+      <option value="3">March</option><option value="4">April</option>
+      <option value="5">May</option><option value="6">June</option>
+      <option value="7">July</option><option value="8">August</option>
+      <option value="9">September</option><option value="10">October</option>
+      <option value="11">November</option><option value="12">December</option>
+    </select>
+    <span class="sel-count" id="selCount" style="display:none"></span>
+  </div>
+
+  <!-- Action bar -->
+  <div style="display:flex;gap:8px;margin-bottom:10px">
+    <button class="btn btn-outline btn-sm" onclick="toggleSelectMode()" id="selectModeBtn" style="flex:1">☑ Select</button>
+    <button class="btn btn-outline btn-sm" onclick="openCsvModal()" id="exportCsvBtn" style="flex:1">📄 Export CSV</button>
+  </div>
+
+  <div id="historyList"></div>
+</div>
+
+<!-- PAGE: SETTINGS -->
+<div class="page" id="page-settings">
+  <div class="sect-label">Center info</div>
+  <div class="card">
+    <div class="settings-field">
+      <label>Center / teacher name</label>
+      <input type="text" id="centerName" placeholder="e.g. Cikgu Alia Online Tuition" oninput="saveSettings()">
+    </div>
+    <div class="settings-field">
+      <label>Tagline (optional)</label>
+      <input type="text" id="centerTagline" placeholder="e.g. Online Tuition Center" oninput="saveSettings()">
+    </div>
+  </div>
+
+  <div class="sect-label">Google Sheets connection</div>
+  <div class="card">
+    <div class="info-box">
+      <strong>One-time setup:</strong> Follow these steps to connect this app to your Google Sheet.<br><br>
+      1. Open your Google Sheet → <b>Extensions → Apps Script</b><br>
+      2. Replace all code with the script below → click <b>Save</b><br>
+      3. Click <b>Deploy → New deployment → Web app</b><br>
+      4. Set "Who has access" to <b>Anyone</b> → click Deploy<br>
+      5. Copy the <b>Web App URL</b> and paste it below
+    </div>
+    <div class="code-snippet" id="appsScriptCode">function doPost(e) {
+  var sheet = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName("Receipts");
+  if (!sheet) {
+    sheet = SpreadsheetApp
+      .getActiveSpreadsheet()
+      .insertSheet("Receipts");
+    sheet.appendRow([
+      "Receipt No","Date","Month Paid For",
+      "Student Name","Tuition Fee (RM)",
+      "Book Fee (RM)","Total (RM)",
+      "Payment Method","Center Name"
+    ]);
+  }
+  var d = JSON.parse(e.postData.contents);
+  sheet.appendRow([
+    d.num, d.date, d.monthLabel,
+    d.student, d.tuition,
+    d.book, d.total,
+    d.method, d.center
+  ]);
+  return ContentService
+    .createTextOutput(JSON.stringify({ok:true}))
+    .setMimeType(ContentService.MimeType.JSON);
+}</div>
+    <button class="btn btn-outline btn-sm" onclick="copyScript()" style="margin-bottom:12px">📋 Copy script</button>
+    <div class="settings-field">
+      <label>Apps Script Web App URL</label>
+      <input type="url" id="sheetUrl" placeholder="https://script.google.com/macros/s/..." oninput="saveSettings()">
+    </div>
+    <button class="btn btn-primary" onclick="testConnection()">Test connection</button>
+  </div>
+
+  <div class="sect-label">Data</div>
+  <div class="card">
+    <button class="btn btn-outline" onclick="openCsvModal()" style="margin-bottom:8px">📄 Export receipts as CSV</button>
+    <button class="btn btn-danger btn-sm" onclick="clearAllData()">🗑 Clear all local data</button>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <button class="tab-btn active" id="tab-new" onclick="goTab('new')">
+    <span class="tab-icon">➕</span><span>New</span>
+  </button>
+  <button class="tab-btn" id="tab-history" onclick="goTab('history')">
+    <span class="tab-icon">📋</span><span>History</span>
+  </button>
+  <button class="tab-btn" id="tab-settings" onclick="goTab('settings')">
+    <span class="tab-icon">⚙️</span><span>Settings</span>
+  </button>
+</div>
+
+<!-- RECEIPT MODAL (after save) -->
+<div class="modal-bg" id="receiptModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modalTitle">Receipt saved!</div>
+    <div id="modalReceiptPreview"></div>
+    <div class="modal-actions">
+      <button class="btn btn-print" onclick="doPrint()">🖨️ Print receipt</button>
+      <button class="btn btn-pdf" onclick="doSavePDF()">⬇️ Save as PDF</button>
+      <div class="action-divider"><span>or</span></div>
+      <button class="btn btn-outline" onclick="closeModal()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL (history tap) -->
+<div class="modal-bg" id="detailModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="detailTitle">Receipt details</div>
+    <div id="detailContent"></div>
+    <div class="modal-actions">
+      <button class="btn btn-print" onclick="printFromDetail()">🖨️ Print receipt</button>
+      <button class="btn btn-pdf" onclick="pdfFromDetail()">⬇️ Save as PDF</button>
+      <div class="action-divider"><span>or</span></div>
+      <button class="btn btn-danger" onclick="deleteFromDetail()">🗑 Delete receipt</button>
+      <button class="btn btn-outline" onclick="closeDetailModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- CSV SELECTION MODAL -->
+<div class="modal-bg" id="csvModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Export receipts as CSV</div>
+
+    <!-- Filter inside modal -->
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <select id="csvFilterYear" onchange="renderCsvList()" style="flex:1;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background:var(--surface);-webkit-appearance:none;appearance:none;">
+        <option value="">All years</option>
+      </select>
+      <select id="csvFilterMonth" onchange="renderCsvList()" style="flex:1;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background:var(--surface);-webkit-appearance:none;appearance:none;">
+        <option value="">All months</option>
+        <option value="1">January</option><option value="2">February</option>
+        <option value="3">March</option><option value="4">April</option>
+        <option value="5">May</option><option value="6">June</option>
+        <option value="7">July</option><option value="8">August</option>
+        <option value="9">September</option><option value="10">October</option>
+        <option value="11">November</option><option value="12">December</option>
+      </select>
+    </div>
+
+    <div class="csv-select-all">
+      <label>
+        <div class="select-checkbox" id="selectAllBox">✓</div>
+        <span id="selectAllLabel">All selected</span>
+      </label>
+      <span style="font-size:12px;color:var(--ink3)" id="csvSelCount">0 receipts</span>
+    </div>
+
+    <div class="csv-list" id="csvList"></div>
+
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="doExportCSV()">⬇️ Download CSV</button>
+      <button class="btn btn-outline" onclick="closeCsvModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- HIDDEN PRINT AREA -->
+<div id="printArea"></div>
+
+<script>
+// ── STORAGE ──
+var STORE = 'tuition_app_v2';
+var SET_STORE = 'tuition_settings_v2';
+
+function getReceipts() { try { return JSON.parse(localStorage.getItem(STORE) || '[]'); } catch { return []; } }
+function saveReceipts(arr) { localStorage.setItem(STORE, JSON.stringify(arr)); }
+function getSettings() { try { return JSON.parse(localStorage.getItem(SET_STORE) || '{}'); } catch { return {}; } }
+
+function saveSettings() {
+  var s = { center: document.getElementById('centerName').value, tagline: document.getElementById('centerTagline').value, sheetUrl: document.getElementById('sheetUrl').value };
+  localStorage.setItem(SET_STORE, JSON.stringify(s));
+  updateSheetStatus();
+}
+
+// ── MONTH PICKER INIT ──
+function initMonthPicker() {
+  // Days 1–31
+  var dayEl = document.getElementById('payMonthDay');
+  dayEl.innerHTML = '';
+  for (var d = 1; d <= 31; d++) {
+    var o = document.createElement('option');
+    o.value = d; o.textContent = d;
+    dayEl.appendChild(o);
+  }
+  // Years: 3 years back to 3 ahead
+  var yearEl = document.getElementById('payMonthYear');
+  yearEl.innerHTML = '';
+  var cur = new Date().getFullYear();
+  for (var y = cur - 3; y <= cur + 3; y++) {
+    var o2 = document.createElement('option');
+    o2.value = y; o2.textContent = y;
+    if (y === cur) o2.selected = true;
+    yearEl.appendChild(o2);
+  }
+}
+
+function getMonthLabel() {
+  var day = document.getElementById('payMonthDay').value;
+  var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var month = monthNames[parseInt(document.getElementById('payMonthMonth').value) - 1];
+  var year = document.getElementById('payMonthYear').value;
+  return day + ' ' + month + ' ' + year;
+}
+
+// ── INIT ──
+window.addEventListener('load', function() {
+  initMonthPicker();
+  var today = new Date();
+  document.getElementById('payDate').value = today.toISOString().split('T')[0];
+  document.getElementById('payMonthDay').value = today.getDate();
+  document.getElementById('payMonthMonth').value = today.getMonth() + 1;
+  document.getElementById('payMonthYear').value = today.getFullYear();
+
+  var s = getSettings();
+  if (s.center) document.getElementById('centerName').value = s.center;
+  if (s.tagline) document.getElementById('centerTagline').value = s.tagline;
+  if (s.sheetUrl) document.getElementById('sheetUrl').value = s.sheetUrl;
+
+  updateSheetStatus();
+  populateYearFilters();
+  renderHistory();
+});
+
+// ── TABS ──
+function goTab(name) {
+  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'history') { populateYearFilters(); renderHistory(); }
+}
+
+// ── TOTAL ──
+function updateTotal() {
+  var t = parseFloat(document.getElementById('tuitionFee').value) || 0;
+  var b = parseFloat(document.getElementById('bookFee').value) || 0;
+  var total = t + b;
+  document.getElementById('feeTotal').textContent = 'RM ' + total.toFixed(2);
+  if (t > 0 && b > 0) { document.getElementById('feeBreakdown').textContent = 'Tuition RM' + t.toFixed(2) + ' + Book RM' + b.toFixed(2); }
+  else if (t > 0) { document.getElementById('feeBreakdown').textContent = 'Tuition fee only'; }
+  else { document.getElementById('feeBreakdown').textContent = '—'; }
+}
+
+// ── RECEIPT NUMBER ──
+function nextNum() {
+  var receipts = getReceipts();
+  var year = new Date().getFullYear();
+  var same = receipts.filter(function(r) { return r.num && r.num.indexOf('RCP-' + year + '-') === 0; });
+  return 'RCP-' + year + '-' + String(same.length + 1).padStart(3, '0');
+}
+
+function fmtDate(s) {
+  if (!s) return '—';
+  var d = new Date(s + 'T00:00:00');
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+}
+function fmt(n) { return 'RM ' + parseFloat(n || 0).toFixed(2); }
+
+// ── SUBMIT ──
+function submitReceipt() {
+  var student = document.getElementById('studentName').value.trim();
+  var date = document.getElementById('payDate').value;
+  var monthLabel = getMonthLabel();
+  var tuition = parseFloat(document.getElementById('tuitionFee').value) || 0;
+  var book = parseFloat(document.getElementById('bookFee').value) || 0;
+  var method = document.getElementById('payMethod').value;
+  var s = getSettings();
+  var center = s.center || 'Tuition Center';
+
+  if (!student) { toast('⚠️ Please enter student name'); return; }
+  if (!date) { toast('⚠️ Please select a date'); return; }
+  if (tuition <= 0) { toast('⚠️ Please enter tuition fee'); return; }
+
+  var receipt = {
+    num: nextNum(), date: date, monthLabel: monthLabel,
+    student: student, tuition: tuition, book: book,
+    total: tuition + book, method: method, center: center,
+    tagline: s.tagline || 'Online Tuition Center',
+    savedAt: new Date().toISOString()
+  };
+
+  var receipts = getReceipts();
+  receipts.unshift(receipt);
+  saveReceipts(receipts);
+  sendToSheets(receipt);
+  showReceiptModal(receipt, true);
+  clearForm();
+}
+
+// ── SHEETS ──
+function sendToSheets(receipt) {
+  var s = getSettings();
+  if (!s.sheetUrl) return;
+  fetch(s.sheetUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(receipt) }).catch(function() {});
+}
+
+function testConnection() {
+  var url = document.getElementById('sheetUrl').value.trim();
+  if (!url) { toast('⚠️ Please enter the Web App URL first'); return; }
+  var test = { num: 'TEST-001', date: new Date().toISOString().split('T')[0], monthLabel: 'Test', student: 'Connection Test', tuition: 0, book: 0, total: 0, method: 'Test', center: 'Test', tagline: '' };
+  fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(test) })
+    .then(function() { toast('✅ Sent! Check your Sheet for TEST-001'); updateSheetStatus(); })
+    .catch(function() { toast('❌ Could not reach the URL — check it'); });
+}
+
+function updateSheetStatus() {
+  var s = getSettings();
+  var dot = document.getElementById('statusDot');
+  var txt = document.getElementById('statusText');
+  if (s.sheetUrl && s.sheetUrl.includes('script.google.com')) { dot.classList.add('connected'); txt.textContent = 'Sheets connected'; }
+  else { dot.classList.remove('connected'); txt.textContent = 'Setup Sheets'; }
+}
+
+// ── MODAL ──
+var currentReceipt = null;
+
+function showReceiptModal(receipt, isNew) {
+  currentReceipt = receipt;
+  document.getElementById('modalTitle').textContent = isNew ? '✅ Receipt ' + receipt.num + ' saved!' : 'Receipt ' + receipt.num;
+  document.getElementById('modalReceiptPreview').innerHTML = buildPreviewHTML(receipt);
+  document.getElementById('receiptModal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('receiptModal').classList.remove('open'); }
+
+function buildPreviewHTML(r) {
+  var rows = '<tr><td style="padding:8px 0;font-size:13.5px;border-bottom:1px dashed #e0dbd0">Tuition Fee</td><td style="text-align:right;font-weight:500;font-size:13.5px;border-bottom:1px dashed #e0dbd0">' + fmt(r.tuition) + '</td></tr>';
+  if (r.book > 0) rows += '<tr><td style="padding:8px 0;font-size:13.5px">Book Fee</td><td style="text-align:right;font-weight:500;font-size:13.5px">' + fmt(r.book) + '</td></tr>';
+  return '<div style="background:var(--bg);border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.8;color:var(--ink2);margin-bottom:12px">' +
+    '<div style="font-weight:500;color:var(--ink)">' + r.student + '</div>' +
+    '<div style="color:var(--ink3);font-size:12px">' + r.num + ' · ' + (r.monthLabel || r.month || '') + ' · ' + fmtDate(r.date) + '</div>' +
+    '<div style="color:var(--ink3);font-size:12px">' + r.method + '</div>' +
+    '</div>' +
+    '<table style="width:100%;border-collapse:collapse"><tbody>' + rows + '</tbody></table>' +
+    '<div style="display:flex;justify-content:flex-end;margin-top:10px">' +
+      '<div style="background:var(--accent-bg);border:1px solid #b7e4c7;border-radius:8px;padding:8px 14px;display:flex;gap:16px;align-items:center">' +
+        '<span style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--accent);font-weight:500">Total</span>' +
+        '<span style="font-family:\'Playfair Display\',serif;font-size:21px;font-weight:700;color:var(--accent2)">' + fmt(r.total) + '</span>' +
+      '</div>' +
+    '</div>';
+}
+
+// ── PRINT & PDF ──
+function buildPrintHTML(r) {
+  var bookRow = r.book > 0 ? '<tr><td>Book Fee</td><td>' + fmt(r.book) + '</td></tr>' : '';
+  var monthFor = r.monthLabel || r.month || '';
+  return '<div class="pr-top">' +
+    '<div><div class="pr-center-name">' + r.center + '</div><div class="pr-center-sub">' + (r.tagline || 'Online Tuition Center') + '</div></div>' +
+    '<div><div class="pr-title">Receipt</div><div class="pr-num">' + r.num + '</div></div>' +
+    '</div>' +
+    '<div class="pr-meta">' +
+      '<div class="pr-meta-item"><label>Date</label><div class="v">' + fmtDate(r.date) + '</div></div>' +
+      '<div class="pr-meta-item"><label>For</label><div class="v">' + monthFor + '</div></div>' +
+      '<div class="pr-meta-item"><label>Method</label><div class="v">' + r.method + '</div></div>' +
+    '</div>' +
+    '<div class="pr-from"><label>Received from</label><div class="v">' + r.student + '</div></div>' +
+    '<table class="pr-table"><thead><tr><th>Description</th><th>Amount</th></tr></thead><tbody>' +
+      '<tr><td>Tuition Fee</td><td>' + fmt(r.tuition) + '</td></tr>' + bookRow +
+    '</tbody></table>' +
+    '<div class="pr-total-row"><div class="pr-total-box"><span class="tl">Total</span><span class="ta">' + fmt(r.total) + '</span></div></div>' +
+    '<div class="pr-footer">' +
+      '<div class="pr-note">This is an official receipt.<br>Please retain for your records.<br>Thank you for your payment.</div>' +
+      '<div class="pr-sig"><div class="pr-sig-line"></div><div class="pr-sig-label">Authorised Signature</div></div>' +
+    '</div>';
+}
+
+function doPrint() {
+  if (!currentReceipt) return;
+  document.getElementById('printArea').innerHTML = buildPrintHTML(currentReceipt);
+  closeModal();
+  setTimeout(function() { window.print(); }, 150);
+}
+
+function doSavePDF() {
+  if (!currentReceipt) return;
+  document.getElementById('printArea').innerHTML = buildPrintHTML(currentReceipt);
+  closeModal();
+  setTimeout(function() {
+    // Trigger browser print dialog pre-set to PDF
+    var style = document.createElement('style');
+    style.id = 'pdfHint';
+    style.textContent = '@page { size: A4; margin: 0; }';
+    document.head.appendChild(style);
+    window.print();
+    setTimeout(function() {
+      var el = document.getElementById('pdfHint');
+      if (el) el.remove();
+    }, 1000);
+  }, 150);
+  toast('💡 In the print dialog, choose "Save as PDF" as the destination');
+}
+
+function printFromDetail() {
+  if (!currentReceipt) return;
+  document.getElementById('printArea').innerHTML = buildPrintHTML(currentReceipt);
+  closeDetailModal();
+  setTimeout(function() { window.print(); }, 150);
+}
+
+function pdfFromDetail() {
+  if (!currentReceipt) return;
+  document.getElementById('printArea').innerHTML = buildPrintHTML(currentReceipt);
+  closeDetailModal();
+  setTimeout(function() {
+    var style = document.createElement('style');
+    style.id = 'pdfHint2';
+    style.textContent = '@page { size: A4; margin: 0; }';
+    document.head.appendChild(style);
+    window.print();
+    setTimeout(function() { var el = document.getElementById('pdfHint2'); if (el) el.remove(); }, 1000);
+  }, 150);
+  toast('💡 In the print dialog, choose "Save as PDF" as the destination');
+}
+
+// ── HISTORY ──
+var selectMode = false;
+var selectedNums = new Set();
+
+function populateYearFilters() {
+  var receipts = getReceipts();
+  var years = [...new Set(receipts.map(function(r) { return r.date ? r.date.split('-')[0] : ''; }).filter(Boolean))].sort().reverse();
+  ['filterYear', 'csvFilterYear'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var cur = el.value;
+    el.innerHTML = '<option value="">All years</option>';
+    years.forEach(function(y) {
+      var o = document.createElement('option');
+      o.value = y; o.textContent = y;
+      if (y === cur) o.selected = true;
+      el.appendChild(o);
+    });
+  });
+}
+
+function getFilteredReceipts() {
+  var receipts = getReceipts();
+  var year = document.getElementById('filterYear') ? document.getElementById('filterYear').value : '';
+  var month = document.getElementById('filterMonth') ? document.getElementById('filterMonth').value : '';
+  if (year) receipts = receipts.filter(function(r) { return r.date && r.date.startsWith(year); });
+  if (month) {
+    receipts = receipts.filter(function(r) {
+      if (!r.date) return false;
+      return parseInt(r.date.split('-')[1]) === parseInt(month);
+    });
+  }
+  return receipts;
+}
+
+function toggleSelectMode() {
+  selectMode = !selectMode;
+  selectedNums.clear();
+  document.getElementById('selectModeBtn').textContent = selectMode ? '✕ Cancel' : '☑ Select';
+  document.getElementById('selCount').style.display = selectMode ? '' : 'none';
+  renderHistory();
+}
+
+function toggleSelect(num) {
+  if (selectedNums.has(num)) { selectedNums.delete(num); }
+  else { selectedNums.add(num); }
+  document.getElementById('selCount').textContent = selectedNums.size + ' selected';
+  renderHistory();
+}
+
+function renderHistory() {
+  var receipts = getFilteredReceipts();
+  var el = document.getElementById('historyList');
+  if (!receipts.length) {
+    el.innerHTML = '<div class="empty-state">No receipts found.<br>Create your first receipt in the New tab.</div>';
+    return;
+  }
+  el.innerHTML = receipts.map(function(r) {
+    var isSelected = selectedNums.has(r.num);
+    var checkHtml = selectMode
+      ? '<div class="select-checkbox' + (isSelected ? ' checked' : '') + '">' + (isSelected ? '✓' : '') + '</div>'
+      : '';
+    var clickFn = selectMode
+      ? 'toggleSelect(\'' + r.num + '\')'
+      : 'openDetail(\'' + r.num + '\')';
+    return '<div class="receipt-item' + (isSelected ? ' selected' : '') + '" onclick="' + clickFn + '">' +
+      checkHtml +
+      '<div class="rcp-icon">🧾</div>' +
+      '<div class="rcp-info">' +
+        '<div class="rcp-name">' + r.student + '</div>' +
+        '<div class="rcp-meta">' + fmtDate(r.date) + ' · ' + (r.monthLabel || r.month || '') + ' · ' + r.method + '</div>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">' +
+        '<div class="rcp-amount">' + fmt(r.total) + '</div>' +
+        '<div class="rcp-num">' + r.num + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ── DETAIL MODAL ──
+var detailNum = null;
+
+function openDetail(num) {
+  if (selectMode) { toggleSelect(num); return; }
+  var receipts = getReceipts();
+  var r = receipts.find(function(x) { return x.num === num; });
+  if (!r) return;
+  currentReceipt = r;
+  detailNum = num;
+  document.getElementById('detailTitle').textContent = r.student;
+  document.getElementById('detailContent').innerHTML = buildPreviewHTML(r);
+  document.getElementById('detailModal').classList.add('open');
+}
+
+function closeDetailModal() { document.getElementById('detailModal').classList.remove('open'); }
+
+function deleteFromDetail() {
+  if (!detailNum) return;
+  if (!confirm('Delete receipt ' + detailNum + '? This cannot be undone.')) return;
+  var receipts = getReceipts().filter(function(r) { return r.num !== detailNum; });
+  saveReceipts(receipts);
+  closeDetailModal();
+  renderHistory();
+  toast('🗑 Receipt deleted');
+}
+
+// ── CSV MODAL ──
+var csvSelected = new Set();
+
+function openCsvModal() {
+  populateYearFilters();
+  document.getElementById('csvFilterYear').value = '';
+  document.getElementById('csvFilterMonth').value = '';
+  csvSelected = new Set(getReceipts().map(function(r) { return r.num; }));
+  renderCsvList();
+  document.getElementById('csvModal').classList.add('open');
+}
+
+function closeCsvModal() { document.getElementById('csvModal').classList.remove('open'); }
+
+function getCsvFiltered() {
+  var receipts = getReceipts();
+  var year = document.getElementById('csvFilterYear').value;
+  var month = document.getElementById('csvFilterMonth').value;
+  if (year) receipts = receipts.filter(function(r) { return r.date && r.date.startsWith(year); });
+  if (month) receipts = receipts.filter(function(r) { return r.date && parseInt(r.date.split('-')[1]) === parseInt(month); });
+  return receipts;
+}
+
+function renderCsvList() {
+  var receipts = getCsvFiltered();
+  // Reset selection to all filtered
+  csvSelected = new Set(receipts.map(function(r) { return r.num; }));
+  updateCsvSelectAll(receipts);
+
+  var el = document.getElementById('csvList');
+  if (!receipts.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--ink3);font-size:13px">No receipts match this filter.</div>'; return; }
+
+  el.innerHTML = receipts.map(function(r) {
+    return '<div class="csv-item" onclick="toggleCsvItem(\'' + r.num + '\')" id="csvrow-' + r.num.replace(/[^a-z0-9]/gi,'') + '">' +
+      '<div class="select-checkbox checked" id="csvchk-' + r.num.replace(/[^a-z0-9]/gi,'') + '">✓</div>' +
+      '<div class="csv-item-info">' +
+        '<div class="csv-item-name">' + r.student + '</div>' +
+        '<div class="csv-item-meta">' + r.num + ' · ' + fmtDate(r.date) + ' · ' + (r.monthLabel || r.month || '') + '</div>' +
+      '</div>' +
+      '<div class="csv-item-amt">' + fmt(r.total) + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function toggleCsvItem(num) {
+  var safe = num.replace(/[^a-z0-9]/gi,'');
+  var box = document.getElementById('csvchk-' + safe);
+  if (csvSelected.has(num)) {
+    csvSelected.delete(num);
+    box.classList.remove('checked'); box.textContent = '';
+  } else {
+    csvSelected.add(num);
+    box.classList.add('checked'); box.textContent = '✓';
+  }
+  var receipts = getCsvFiltered();
+  updateCsvSelectAll(receipts);
+}
+
+function updateCsvSelectAll(receipts) {
+  var allSelected = receipts.length > 0 && receipts.every(function(r) { return csvSelected.has(r.num); });
+  var box = document.getElementById('selectAllBox');
+  var lbl = document.getElementById('selectAllLabel');
+  var cnt = document.getElementById('csvSelCount');
+  box.classList.toggle('checked', allSelected);
+  box.textContent = allSelected ? '✓' : '';
+  lbl.textContent = allSelected ? 'All selected' : 'Select all';
+  cnt.textContent = csvSelected.size + ' receipt' + (csvSelected.size !== 1 ? 's' : '');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('selectAllBox').parentElement.addEventListener('click', function() {
+    var receipts = getCsvFiltered();
+    var allSel = receipts.every(function(r) { return csvSelected.has(r.num); });
+    if (allSel) {
+      receipts.forEach(function(r) {
+        csvSelected.delete(r.num);
+        var safe = r.num.replace(/[^a-z0-9]/gi,'');
+        var box = document.getElementById('csvchk-' + safe);
+        if (box) { box.classList.remove('checked'); box.textContent = ''; }
+      });
+    } else {
+      receipts.forEach(function(r) {
+        csvSelected.add(r.num);
+        var safe = r.num.replace(/[^a-z0-9]/gi,'');
+        var box = document.getElementById('csvchk-' + safe);
+        if (box) { box.classList.add('checked'); box.textContent = '✓'; }
+      });
+    }
+    updateCsvSelectAll(receipts);
+  });
+});
+
+function doExportCSV() {
+  if (!csvSelected.size) { toast('⚠️ Please select at least one receipt'); return; }
+  var allReceipts = getReceipts();
+  var toExport = allReceipts.filter(function(r) { return csvSelected.has(r.num); });
+  var header = ['Receipt No','Date','Month Paid For','Student Name','Tuition Fee (RM)','Book Fee (RM)','Total (RM)','Payment Method'];
+  var rows = toExport.map(function(r) {
+    return [r.num, r.date, r.monthLabel || r.month || '', r.student, r.tuition.toFixed(2), (r.book||0).toFixed(2), r.total.toFixed(2), r.method];
+  });
+  var csv = [header].concat(rows).map(function(row) {
+    return row.map(function(v) { return '"' + String(v).replace(/"/g,'""') + '"'; }).join(',');
+  }).join('\n');
+  var blob = new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8;'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  var yr = document.getElementById('csvFilterYear').value || new Date().getFullYear();
+  a.download = 'tuition_receipts_' + yr + '.csv';
+  a.click();
+  closeCsvModal();
+  toast('✅ CSV downloaded — ' + toExport.length + ' receipt(s)');
+}
+
+// ── UTILS ──
+function clearForm() {
+  document.getElementById('studentName').value = '';
+  document.getElementById('tuitionFee').value = '';
+  document.getElementById('bookFee').value = '';
+  document.getElementById('feeTotal').textContent = 'RM 0.00';
+  document.getElementById('feeBreakdown').textContent = '—';
+  var today = new Date();
+  document.getElementById('payDate').value = today.toISOString().split('T')[0];
+  document.getElementById('payMonthDay').value = today.getDate();
+  document.getElementById('payMonthMonth').value = today.getMonth() + 1;
+  document.getElementById('payMonthYear').value = today.getFullYear();
+}
+
+function toast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 3000);
+}
+
+function copyScript() {
+  var text = document.getElementById('appsScriptCode').textContent;
+  navigator.clipboard.writeText(text).then(function() { toast('✅ Script copied!'); });
+}
+
+function clearAllData() {
+  if (!confirm('Delete ALL saved receipts from this device? This cannot be undone.')) return;
+  localStorage.removeItem(STORE);
+  renderHistory();
+  toast('🗑 All local data cleared');
+}
+</script>
+</body>
+</html>
