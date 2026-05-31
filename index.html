@@ -478,41 +478,60 @@ body { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--i
 }
 
 function doGet(e) {
-  var sheet = getOrCreateSheet();
-  var data = sheet.getDataRange().getValues();
-  var headers = data[0];
-  var rows = [];
-  for (var i = 1; i < data.length; i++) {
-    var row = {};
-    for (var j = 0; j < headers.length; j++) {
-      row[headers[j]] = data[i][j];
+  var cb = e.parameter.callback || "";
+  var action = e.parameter.action || "list";
+  var result;
+
+  if (action === "save") {
+    // Save a new receipt row and return the receipt number
+    var d = JSON.parse(decodeURIComponent(e.parameter.data || "{}"));
+    var sheet = getOrCreateSheet();
+    var lastRow = sheet.getLastRow();
+    var year = new Date().getFullYear();
+    var num = "YHTRCP-" + year + "-" +
+              String(lastRow).padStart(3, "0");
+    sheet.appendRow([
+      num,
+      d.date        || "",
+      d.student     || "",
+      d.tuition     || 0,
+      d.book        || 0,
+      d.total       || 0,
+      d.method      || "",
+      d.payDetails  || "",
+      d.center      || ""
+    ]);
+    result = JSON.stringify({ ok: true, num: num });
+
+  } else {
+    // List all receipts
+    var sheet = getOrCreateSheet();
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var rows = [];
+    for (var i = 1; i < data.length; i++) {
+      var row = {};
+      for (var j = 0; j < headers.length; j++) {
+        row[headers[j]] = String(data[i][j]);
+      }
+      rows.push(row);
     }
-    rows.push(row);
+    result = JSON.stringify({ ok: true, rows: rows });
+  }
+
+  if (cb) {
+    return ContentService
+      .createTextOutput(cb + "(" + result + ")")
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
   }
   return ContentService
-    .createTextOutput(JSON.stringify({ok:true, rows:rows}))
+    .createTextOutput(result)
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+// doPost kept as backup (not used by the app directly)
 function doPost(e) {
-  var sheet = getOrCreateSheet();
-  var d = JSON.parse(e.postData.contents);
-
-  // Auto-generate receipt number from Sheet row count
-  var lastRow = sheet.getLastRow();
-  var year = new Date().getFullYear();
-  var num = "YHTRCP-" + year + "-" +
-            String(lastRow).padStart(3,"0");
-
-  sheet.appendRow([
-    num, d.date, d.student,
-    d.tuition, d.book, d.total,
-    d.method, d.payDetails || "",
-    d.center
-  ]);
-  return ContentService
-    .createTextOutput(JSON.stringify({ok:true, num:num}))
-    .setMimeType(ContentService.MimeType.JSON);
+  return doGet(e);
 }</div>
     <button class="btn btn-outline btn-sm" onclick="copyScript()" style="margin-bottom:12px">📋 Copy script</button>
     <div class="settings-field">
@@ -625,7 +644,7 @@ function doPost(e) {
 var CONFIG = {
   center:   'Yeelise Home Tutor',   // e.g. 'Cikgu Alia Online Tuition'
   tagline:  'Online Tuition Center',      // e.g. 'Online Tuition Center'
-  sheetUrl: 'https://script.google.com/macros/s/AKfycbycH3uSGhiB-a_i5-3HyMlkh8yCzG6z4QcdY86tvNv3-srEYMnNIiRPEagezmOcSfi0Iw/exec'                            // Paste your Apps Script Web App URL here
+  sheetUrl: ''                            // Paste your Apps Script Web App URL here
 };
 // ════════════════════════════════════════════════
 
@@ -732,15 +751,11 @@ function submitReceipt() {
   toast('⏳ Saving receipt...');
 
   if (s.sheetUrl) {
-    // Send to Sheet — Sheet assigns the receipt number
-    fetch(s.sheetUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(receipt)
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-      if (data.ok && data.num) {
+    // POST via fetch — Apps Script handles CORS via JSONP callback in response
+    // We use no-cors for the POST write (fire-and-forget), then JSONP for the read-back
+    // Use form-encoded trick: encode data as URL param so doGet can handle it as a write too
+    jsonpRequest(s.sheetUrl, { action: 'save', data: JSON.stringify(receipt) }, function(data) {
+      if (data && data.ok && data.num) {
         receipt.num = data.num;
       } else {
         receipt.num = localFallbackNum();
@@ -748,10 +763,8 @@ function submitReceipt() {
       saveToLocal(receipt);
       showReceiptModal(receipt, true);
       clearForm();
-      refreshFromSheet(); // reload history from Sheet
-    })
-    .catch(function() {
-      // Offline fallback — use local number, sync later
+      refreshFromSheet();
+    }, function() {
       receipt.num = localFallbackNum();
       receipt.pendingSync = true;
       saveToLocal(receipt);
@@ -782,51 +795,84 @@ function saveToLocal(receipt) {
   saveReceipts(receipts);
 }
 
+// ── JSONP helper — bypasses CORS for Google Apps Script ──
+var _jsonpCbs = {};
+function jsonpRequest(url, params, onSuccess, onError) {
+  var cbName = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+  var timeout = setTimeout(function() {
+    delete window[cbName];
+    if (onError) onError();
+  }, 15000);
+
+  window[cbName] = function(data) {
+    clearTimeout(timeout);
+    delete window[cbName];
+    var el = document.getElementById(cbName);
+    if (el) el.remove();
+    if (onSuccess) onSuccess(data);
+  };
+
+  var qs = 'callback=' + cbName;
+  if (params) {
+    Object.keys(params).forEach(function(k) {
+      qs += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+    });
+  }
+
+  var script = document.createElement('script');
+  script.id = cbName;
+  script.src = url + '?' + qs;
+  script.onerror = function() {
+    clearTimeout(timeout);
+    delete window[cbName];
+    script.remove();
+    if (onError) onError();
+  };
+  document.head.appendChild(script);
+}
+
 // ── SHEETS ──
 function refreshFromSheet() {
   var s = getSettings();
   if (!s.sheetUrl) return;
-  fetch(s.sheetUrl)
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-      if (!data.ok || !data.rows) return;
-      // Map Sheet rows back to receipt objects
-      var receipts = data.rows.map(function(r) {
-        return {
-          num:        r['Receipt No']       || '',
-          date:       r['Date']             || '',
-          student:    r['Student Name']     || '',
-          tuition:    parseFloat(r['Tuition Fee (RM)']) || 0,
-          book:       parseFloat(r['Book Fee (RM)'])    || 0,
-          total:      parseFloat(r['Total (RM)'])       || 0,
-          method:     r['Payment Method']   || '',
-          payDetails: r['Payment Details']  || '',
-          center:     r['Center Name']      || ''
-        };
-      }).reverse(); // newest first
-      saveReceipts(receipts);
-      populateYearFilters();
-      renderHistory();
-    })
-    .catch(function() {});
+  jsonpRequest(s.sheetUrl, {action: 'list'}, function(data) {
+    if (!data || !data.ok || !data.rows) return;
+    var receipts = data.rows.map(function(r) {
+      return {
+        num:        r['Receipt No']          || '',
+        date:       r['Date']                || '',
+        student:    r['Student Name']        || '',
+        tuition:    parseFloat(r['Tuition Fee (RM)']) || 0,
+        book:       parseFloat(r['Book Fee (RM)'])    || 0,
+        total:      parseFloat(r['Total (RM)'])       || 0,
+        method:     r['Payment Method']      || '',
+        payDetails: r['Payment Details']     || '',
+        center:     r['Center Name']         || ''
+      };
+    }).reverse();
+    saveReceipts(receipts);
+    populateYearFilters();
+    renderHistory();
+  }, function() {
+    // Silently fail — show cached data
+  });
 }
 
 function testConnection() {
   var url = document.getElementById('sheetUrl').value.trim();
   if (!url) { toast('⚠️ Please enter the Web App URL first'); return; }
-  toast('⏳ Testing...');
-  fetch(url)
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-      if (data.ok) {
-        toast('✅ Connected! Loaded ' + (data.rows ? data.rows.length : 0) + ' receipts from Sheet');
-        saveSettings();
-        refreshFromSheet();
-      } else {
-        toast('❌ Connected but got unexpected response');
-      }
-    })
-    .catch(function() { toast('❌ Could not reach the URL — check it and redeploy'); });
+  toast('⏳ Testing connection...');
+  jsonpRequest(url, {action: 'list'}, function(data) {
+    if (data && data.ok) {
+      toast('✅ Connected! ' + (data.rows ? data.rows.length : 0) + ' receipts found in Sheet');
+      saveSettings();
+      refreshFromSheet();
+    } else {
+      toast('❌ Connected but got unexpected response — redeploy the script');
+    }
+  }, function() {
+    toast('❌ Could not reach Sheet — check the URL and redeploy as "Anyone"');
+  });
 }
 
 function updateSheetStatus() {
