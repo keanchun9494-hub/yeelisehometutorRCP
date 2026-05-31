@@ -477,19 +477,38 @@ body { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--i
   return sheet;
 }
 
+// Counter sheet stores the last used number per year
+// so deleting rows never causes duplicate receipt numbers
+function getNextNum() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var counter = ss.getSheetByName("_Counter");
+  if (!counter) {
+    counter = ss.insertSheet("_Counter");
+    counter.appendRow(["Year", "LastNum"]);
+  }
+  var year = new Date().getFullYear();
+  var data = counter.getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    if (parseInt(data[i][0]) === year) {
+      var next = parseInt(data[i][1]) + 1;
+      counter.getRange(i + 1, 2).setValue(next);
+      return "YHTRCP-" + year + "-" + String(next).padStart(3, "0");
+    }
+  }
+  // First receipt for this year
+  counter.appendRow([year, 1]);
+  return "YHTRCP-" + year + "-001";
+}
+
 function doGet(e) {
   var cb = e.parameter.callback || "";
   var action = e.parameter.action || "list";
   var result;
 
   if (action === "save") {
-    // Save a new receipt row and return the receipt number
     var d = JSON.parse(decodeURIComponent(e.parameter.data || "{}"));
     var sheet = getOrCreateSheet();
-    var lastRow = sheet.getLastRow();
-    var year = new Date().getFullYear();
-    var num = "YHTRCP-" + year + "-" +
-              String(lastRow).padStart(3, "0");
+    var num = getNextNum(); // always unique, never reuses deleted numbers
     sheet.appendRow([
       num,
       d.date        || "",
@@ -504,14 +523,13 @@ function doGet(e) {
     result = JSON.stringify({ ok: true, num: num });
 
   } else if (action === "delete") {
-    // Delete the row matching the receipt number
     var num = decodeURIComponent(e.parameter.num || "");
     var sheet = getOrCreateSheet();
     var data = sheet.getDataRange().getValues();
     var deleted = false;
     for (var i = 1; i < data.length; i++) {
       if (String(data[i][0]) === num) {
-        sheet.deleteRow(i + 1); // +1 because sheet rows are 1-indexed
+        sheet.deleteRow(i + 1);
         deleted = true;
         break;
       }
@@ -544,7 +562,7 @@ function doGet(e) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-// doPost kept as backup (not used by the app directly)
+// doPost kept as backup
 function doPost(e) {
   return doGet(e);
 }</div>
@@ -1140,9 +1158,67 @@ function buildPDFHTML(r) {
 var selectMode = false;
 var selectedNums = new Set();
 
+// Extract a clean 4-digit year from any date string/format
+function extractYear(s) {
+  if (!s || s === 'undefined') return '';
+  s = String(s).trim();
+  // YYYY-MM-DD
+  var m = s.match(/^(\d{4})-\d{2}-\d{2}/);
+  if (m) return m[1];
+  // DD/MM/YYYY
+  m = s.match(/^\d{1,2}\/\d{1,2}\/(\d{4})/);
+  if (m) return m[1];
+  // Any 4-digit year in the string (e.g. full Date toString)
+  m = s.match(/\b(20\d{2})\b/);
+  if (m) return m[1];
+  return '';
+}
+
+// Extract 1-based month number from any date string
+function extractMonth(s) {
+  if (!s || s === 'undefined') return 0;
+  s = String(s).trim();
+  // YYYY-MM-DD
+  var m = s.match(/^\d{4}-(\d{2})-\d{2}/);
+  if (m) return parseInt(m[1]);
+  // DD/MM/YYYY
+  m = s.match(/^\d{1,2}\/(\d{1,2})\/\d{4}/);
+  if (m) return parseInt(m[1]);
+  // Full date string — parse via fmtDate then grab month
+  var d = new Date(s);
+  if (!isNaN(d.getTime())) return d.getMonth() + 1;
+  return 0;
+}
+
+// Short date format for history list: dd-mm-yyyy
+function fmtShort(s) {
+  if (!s || s === 'undefined' || s === '') return '—';
+  s = String(s).trim();
+  var d;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    var p = s.split('-');
+    return p[2] + '-' + p[1] + '-' + p[0];
+  }
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) {
+    var p = s.split('/');
+    return p[0].padStart(2,'0') + '-' + p[1].padStart(2,'0') + '-' + p[2];
+  }
+  d = new Date(s);
+  if (!isNaN(d.getTime())) {
+    var dd = String(d.getDate()).padStart(2,'0');
+    var mm = String(d.getMonth()+1).padStart(2,'0');
+    var yyyy = d.getFullYear();
+    return dd + '-' + mm + '-' + yyyy;
+  }
+  return s;
+}
+
 function populateYearFilters() {
   var receipts = getReceipts();
-  var years = [...new Set(receipts.map(function(r) { return r.date ? r.date.split('-')[0] : ''; }).filter(Boolean))].sort().reverse();
+  var years = [...new Set(
+    receipts.map(function(r) { return extractYear(r.date); }).filter(Boolean)
+  )].sort().reverse();
+
   ['filterYear', 'csvFilterYear'].forEach(function(id) {
     var el = document.getElementById(id);
     if (!el) return;
@@ -1161,13 +1237,8 @@ function getFilteredReceipts() {
   var receipts = getReceipts();
   var year = document.getElementById('filterYear') ? document.getElementById('filterYear').value : '';
   var month = document.getElementById('filterMonth') ? document.getElementById('filterMonth').value : '';
-  if (year) receipts = receipts.filter(function(r) { return r.date && r.date.startsWith(year); });
-  if (month) {
-    receipts = receipts.filter(function(r) {
-      if (!r.date) return false;
-      return parseInt(r.date.split('-')[1]) === parseInt(month);
-    });
-  }
+  if (year) receipts = receipts.filter(function(r) { return extractYear(r.date) === year; });
+  if (month) receipts = receipts.filter(function(r) { return extractMonth(r.date) === parseInt(month); });
   return receipts;
 }
 
@@ -1206,7 +1277,7 @@ function renderHistory() {
       '<div class="rcp-icon">🧾</div>' +
       '<div class="rcp-info">' +
         '<div class="rcp-name">' + r.student + '</div>' +
-        '<div class="rcp-meta">' + fmtDate(r.date) + ' · ' + r.method + '</div>' +
+        '<div class="rcp-meta">' + fmtShort(r.date) + ' · ' + r.method + '</div>' +
       '</div>' +
       '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">' +
         '<div class="rcp-amount">' + fmt(r.total) + '</div>' +
@@ -1286,8 +1357,8 @@ function getCsvFiltered() {
   var receipts = getReceipts();
   var year = document.getElementById('csvFilterYear').value;
   var month = document.getElementById('csvFilterMonth').value;
-  if (year) receipts = receipts.filter(function(r) { return r.date && r.date.startsWith(year); });
-  if (month) receipts = receipts.filter(function(r) { return r.date && parseInt(r.date.split('-')[1]) === parseInt(month); });
+  if (year) receipts = receipts.filter(function(r) { return extractYear(r.date) === year; });
+  if (month) receipts = receipts.filter(function(r) { return extractMonth(r.date) === parseInt(month); });
   return receipts;
 }
 
@@ -1305,7 +1376,7 @@ function renderCsvList() {
       '<div class="select-checkbox checked" id="csvchk-' + r.num.replace(/[^a-z0-9]/gi,'') + '">✓</div>' +
       '<div class="csv-item-info">' +
         '<div class="csv-item-name">' + r.student + '</div>' +
-        '<div class="csv-item-meta">' + r.num + ' · ' + fmtDate(r.date) + '</div>' +
+        '<div class="csv-item-meta">' + r.num + ' · ' + fmtShort(r.date) + '</div>' +
       '</div>' +
       '<div class="csv-item-amt">' + fmt(r.total) + '</div>' +
     '</div>';
