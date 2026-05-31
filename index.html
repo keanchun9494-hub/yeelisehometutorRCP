@@ -95,10 +95,10 @@ body { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--i
 .select-checkbox.checked { background: var(--accent); border-color: var(--accent); color: white; }
 
 /* HISTORY FILTER BAR */
-.filter-bar { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; flex-wrap: wrap; }
-.filter-bar select { padding: 7px 10px; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--ink); background: var(--surface); -webkit-appearance: none; appearance: none; }
+.filter-bar { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
+.filter-bar select { flex: 1; padding: 7px 10px; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--ink); background: var(--surface); -webkit-appearance: none; appearance: none; min-width: 0; }
 .filter-bar select:focus { outline: none; border-color: var(--accent-mid); }
-.sel-count { font-size: 12px; color: var(--accent); font-weight: 500; margin-left: auto; }
+.sel-count { font-size: 12px; color: var(--accent); font-weight: 500; white-space: nowrap; }
 
 .empty-state { text-align: center; padding: 40px 20px; color: var(--ink3); font-size: 14px; line-height: 1.7; }
 
@@ -414,12 +414,12 @@ body { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--i
     </select>
     <select id="filterMonth" onchange="renderHistory()">
       <option value="">All months</option>
-      <option value="1">January</option><option value="2">February</option>
-      <option value="3">March</option><option value="4">April</option>
-      <option value="5">May</option><option value="6">June</option>
-      <option value="7">July</option><option value="8">August</option>
-      <option value="9">September</option><option value="10">October</option>
-      <option value="11">November</option><option value="12">December</option>
+      <option value="1">Jan</option><option value="2">Feb</option>
+      <option value="3">Mar</option><option value="4">Apr</option>
+      <option value="5">May</option><option value="6">Jun</option>
+      <option value="7">Jul</option><option value="8">Aug</option>
+      <option value="9">Sep</option><option value="10">Oct</option>
+      <option value="11">Nov</option><option value="12">Dec</option>
     </select>
     <span class="sel-count" id="selCount" style="display:none"></span>
   </div>
