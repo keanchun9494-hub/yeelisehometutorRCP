@@ -136,33 +136,201 @@ body { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--i
 #printArea { display: none; }
 
 @media print {
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
   body > *:not(#printArea) { display: none !important; }
-  #printArea { display: block !important; font-family: 'DM Sans', sans-serif; padding: 1.5cm 2cm; color: #1c1c1e; }
-  .pr-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #2d6a4f; }
-  .pr-center-name { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: #1b4332; }
-  .pr-center-sub { font-size: 11px; color: #8e8e93; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 3px; }
-  .pr-title { font-family: 'Playfair Display', serif; font-size: 26px; color: #2d6a4f; }
-  .pr-num { font-size: 11px; color: #8e8e93; font-weight: 500; text-align: right; margin-top: 3px; }
-  .pr-meta { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 20px 0; }
-  .pr-meta-item label { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: #8e8e93; display: block; margin-bottom: 3px; }
-  .pr-meta-item .v { font-size: 14px; font-weight: 500; }
-  .pr-from { margin: 16px 0; padding: 12px 16px; background: #f2ede4; border-radius: 8px; }
-  .pr-from label { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: #8e8e93; display: block; margin-bottom: 3px; }
-  .pr-from .v { font-size: 16px; font-weight: 500; }
-  .pr-table { width: 100%; border-collapse: collapse; margin: 20px 0 10px; }
-  .pr-table th { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: #8e8e93; padding: 6px 0; border-bottom: 1px solid #d1ccc2; text-align: left; }
+
+  #printArea {
+    display: block !important;
+    font-family: 'DM Sans', 'Helvetica Neue', Arial, sans-serif;
+    padding: 1.5cm 2cm;
+    color: #1a1a1a;
+  }
+
+  /* Header */
+  .pr-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 28px;
+    padding-bottom: 18px;
+    border-bottom: 2.5px solid #2d6a4f;
+  }
+  .pr-center-name {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: #1b4332;
+    letter-spacing: -0.02em;
+  }
+  .pr-center-sub {
+    font-size: 10px;
+    color: #555;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-top: 4px;
+    font-weight: 500;
+  }
+  .pr-receipt-right { text-align: right; }
+  .pr-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 28px;
+    font-weight: 400;
+    color: #2d6a4f;
+    letter-spacing: 0.02em;
+  }
+  .pr-num {
+    font-size: 11px;
+    color: #444;
+    font-weight: 600;
+    text-align: right;
+    margin-top: 4px;
+    letter-spacing: 0.05em;
+  }
+
+  /* Meta row */
+  .pr-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 22px 0 18px;
+  }
+  .pr-meta-item label {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #555;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 5px;
+  }
+  .pr-meta-item .v {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1a1a1a;
+  }
+
+  /* Payment details + Received from */
+  .pr-from {
+    margin: 0 0 20px;
+    padding: 13px 16px;
+    background: #f4f0e8;
+    border-radius: 8px;
+    border-left: 3px solid #2d6a4f;
+  }
+  .pr-from label {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #555;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 5px;
+  }
+  .pr-from .v {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+
+  /* Items table */
+  .pr-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 12px;
+  }
+  .pr-table th {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #555;
+    font-weight: 600;
+    padding: 8px 0;
+    border-bottom: 1.5px solid #ccc;
+    text-align: left;
+  }
   .pr-table th:last-child { text-align: right; }
-  .pr-table td { padding: 10px 0; font-size: 14px; border-bottom: 1px dashed #e0dbd0; }
-  .pr-table td:last-child { text-align: right; font-weight: 500; }
-  .pr-total-row { display: flex; justify-content: flex-end; margin: 10px 0 28px; }
-  .pr-total-box { background: #d8f3dc; border: 1px solid #b7e4c7; border-radius: 8px; padding: 10px 18px; display: flex; gap: 20px; align-items: center; }
-  .pr-total-box .tl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #2d6a4f; font-weight: 500; }
-  .pr-total-box .ta { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: #1b4332; }
-  .pr-footer { display: flex; justify-content: space-between; align-items: flex-end; padding-top: 20px; border-top: 1px solid #d1ccc2; }
-  .pr-note { font-size: 11px; color: #8e8e93; line-height: 1.7; }
+  .pr-table td {
+    padding: 11px 0;
+    font-size: 14px;
+    font-weight: 400;
+    color: #1a1a1a;
+    border-bottom: 1px dashed #ddd;
+  }
+  .pr-table td:last-child {
+    text-align: right;
+    font-weight: 600;
+    color: #1a1a1a;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* Total — use table for perfect alignment */
+  .pr-total-row {
+    display: flex;
+    justify-content: flex-end;
+    margin: 14px 0 30px;
+  }
+  .pr-total-box {
+    background: #d8f3dc;
+    border: 1.5px solid #95d5a8;
+    border-radius: 8px;
+    padding: 12px 20px;
+    min-width: 200px;
+  }
+  .pr-total-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 24px;
+  }
+  .pr-total-box .tl {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #2d6a4f;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .pr-total-box .ta {
+    font-family: 'DM Sans', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #1b4332;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  /* Footer */
+  .pr-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-top: 20px;
+    border-top: 1px solid #ccc;
+    margin-top: 10px;
+  }
+  .pr-note {
+    font-size: 10.5px;
+    color: #666;
+    line-height: 1.8;
+  }
   .pr-sig { text-align: center; }
-  .pr-sig-line { width: 140px; border-bottom: 1px solid #1c1c1e; height: 40px; margin: 0 auto 6px; }
-  .pr-sig-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: #8e8e93; }
+  .pr-sig-line {
+    width: 140px;
+    border-bottom: 1px solid #1a1a1a;
+    height: 44px;
+    margin: 0 auto 6px;
+  }
+  .pr-sig-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #555;
+    font-weight: 600;
+  }
 }
 </style>
 </head>
@@ -260,6 +428,7 @@ body { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--i
   <div style="display:flex;gap:8px;margin-bottom:10px">
     <button class="btn btn-outline btn-sm" onclick="toggleSelectMode()" id="selectModeBtn" style="flex:1">☑ Select</button>
     <button class="btn btn-outline btn-sm" onclick="openCsvModal()" id="exportCsvBtn" style="flex:1">📄 Export CSV</button>
+    <button class="btn btn-outline btn-sm" onclick="refreshFromSheet();toast('🔄 Syncing from Sheet...');" style="flex:0 0 auto" title="Sync from Google Sheets">🔄</button>
   </div>
 
   <div id="historyList"></div>
@@ -293,30 +462,56 @@ body { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--i
       4. Set "Who has access" to <b>Anyone</b> → click Deploy<br>
       5. Copy the <b>Web App URL</b> and paste it below
     </div>
-    <div class="code-snippet" id="appsScriptCode">function doPost(e) {
-  var sheet = SpreadsheetApp
-    .getActiveSpreadsheet()
-    .getSheetByName("Receipts");
+    <div class="code-snippet" id="appsScriptCode">function getOrCreateSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Receipts");
   if (!sheet) {
-    sheet = SpreadsheetApp
-      .getActiveSpreadsheet()
-      .insertSheet("Receipts");
+    sheet = ss.insertSheet("Receipts");
     sheet.appendRow([
-      "Receipt No","Date","Month Paid For",
-      "Student Name","Tuition Fee (RM)",
-      "Book Fee (RM)","Total (RM)",
-      "Payment Method","Center Name"
+      "Receipt No","Date","Student Name",
+      "Tuition Fee (RM)","Book Fee (RM)",
+      "Total (RM)","Payment Method",
+      "Payment Details","Center Name"
     ]);
   }
+  return sheet;
+}
+
+function doGet(e) {
+  var sheet = getOrCreateSheet();
+  var data = sheet.getDataRange().getValues();
+  var headers = data[0];
+  var rows = [];
+  for (var i = 1; i < data.length; i++) {
+    var row = {};
+    for (var j = 0; j < headers.length; j++) {
+      row[headers[j]] = data[i][j];
+    }
+    rows.push(row);
+  }
+  return ContentService
+    .createTextOutput(JSON.stringify({ok:true, rows:rows}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  var sheet = getOrCreateSheet();
   var d = JSON.parse(e.postData.contents);
+
+  // Auto-generate receipt number from Sheet row count
+  var lastRow = sheet.getLastRow();
+  var year = new Date().getFullYear();
+  var num = "YHTRCP-" + year + "-" +
+            String(lastRow).padStart(3,"0");
+
   sheet.appendRow([
-    d.num, d.date, d.monthLabel,
-    d.student, d.tuition,
-    d.book, d.total,
-    d.method, d.center
+    num, d.date, d.student,
+    d.tuition, d.book, d.total,
+    d.method, d.payDetails || "",
+    d.center
   ]);
   return ContentService
-    .createTextOutput(JSON.stringify({ok:true}))
+    .createTextOutput(JSON.stringify({ok:true, num:num}))
     .setMimeType(ContentService.MimeType.JSON);
 }</div>
     <button class="btn btn-outline btn-sm" onclick="copyScript()" style="margin-bottom:12px">📋 Copy script</button>
@@ -475,6 +670,9 @@ window.addEventListener('load', function() {
   updateSheetStatus();
   populateYearFilters();
   renderHistory();
+
+  // Pull latest receipts from Sheet on every load
+  refreshFromSheet();
 });
 
 // ── TABS ──
@@ -483,7 +681,11 @@ function goTab(name) {
   document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
   document.getElementById('page-' + name).classList.add('active');
   document.getElementById('tab-' + name).classList.add('active');
-  if (name === 'history') { populateYearFilters(); renderHistory(); }
+  if (name === 'history') {
+    populateYearFilters();
+    renderHistory();
+    refreshFromSheet(); // Always pull fresh from Sheet when opening history
+  }
 }
 
 // ── TOTAL ──
@@ -495,14 +697,6 @@ function updateTotal() {
   if (t > 0 && b > 0) { document.getElementById('feeBreakdown').textContent = 'Tuition RM' + t.toFixed(2) + ' + Book RM' + b.toFixed(2); }
   else if (t > 0) { document.getElementById('feeBreakdown').textContent = 'Tuition fee only'; }
   else { document.getElementById('feeBreakdown').textContent = '—'; }
-}
-
-// ── RECEIPT NUMBER ──
-function nextNum() {
-  var receipts = getReceipts();
-  var year = new Date().getFullYear();
-  var same = receipts.filter(function(r) { return r.num && r.num.indexOf('YHTRCP-' + year + '-') === 0; });
-  return 'YHTRCP-' + year + '-' + String(same.length + 1).padStart(3, '0');
 }
 
 function fmtDate(s) {
@@ -528,35 +722,111 @@ function submitReceipt() {
   if (tuition <= 0) { toast('⚠️ Please enter tuition fee'); return; }
 
   var receipt = {
-    num: nextNum(), date: date,
-    student: student, tuition: tuition, book: book,
+    date: date, student: student, tuition: tuition, book: book,
     total: tuition + book, method: method, payDetails: payDetails,
     center: center, tagline: s.tagline || 'Online Tuition Center',
     savedAt: new Date().toISOString()
   };
 
+  // Show saving spinner
+  toast('⏳ Saving receipt...');
+
+  if (s.sheetUrl) {
+    // Send to Sheet — Sheet assigns the receipt number
+    fetch(s.sheetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(receipt)
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (data.ok && data.num) {
+        receipt.num = data.num;
+      } else {
+        receipt.num = localFallbackNum();
+      }
+      saveToLocal(receipt);
+      showReceiptModal(receipt, true);
+      clearForm();
+      refreshFromSheet(); // reload history from Sheet
+    })
+    .catch(function() {
+      // Offline fallback — use local number, sync later
+      receipt.num = localFallbackNum();
+      receipt.pendingSync = true;
+      saveToLocal(receipt);
+      showReceiptModal(receipt, true);
+      clearForm();
+      toast('⚠️ Saved locally — will sync when online');
+    });
+  } else {
+    // No Sheets URL configured — use local only
+    receipt.num = localFallbackNum();
+    saveToLocal(receipt);
+    showReceiptModal(receipt, true);
+    clearForm();
+  }
+}
+
+// Local fallback number (used when offline or no Sheets URL)
+function localFallbackNum() {
+  var receipts = getReceipts();
+  var year = new Date().getFullYear();
+  var same = receipts.filter(function(r) { return r.num && r.num.indexOf('YHTRCP-' + year + '-') === 0; });
+  return 'YHTRCP-' + year + '-L' + String(same.length + 1).padStart(3, '0');
+}
+
+function saveToLocal(receipt) {
   var receipts = getReceipts();
   receipts.unshift(receipt);
   saveReceipts(receipts);
-  sendToSheets(receipt);
-  showReceiptModal(receipt, true);
-  clearForm();
 }
 
 // ── SHEETS ──
-function sendToSheets(receipt) {
+function refreshFromSheet() {
   var s = getSettings();
   if (!s.sheetUrl) return;
-  fetch(s.sheetUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(receipt) }).catch(function() {});
+  fetch(s.sheetUrl)
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (!data.ok || !data.rows) return;
+      // Map Sheet rows back to receipt objects
+      var receipts = data.rows.map(function(r) {
+        return {
+          num:        r['Receipt No']       || '',
+          date:       r['Date']             || '',
+          student:    r['Student Name']     || '',
+          tuition:    parseFloat(r['Tuition Fee (RM)']) || 0,
+          book:       parseFloat(r['Book Fee (RM)'])    || 0,
+          total:      parseFloat(r['Total (RM)'])       || 0,
+          method:     r['Payment Method']   || '',
+          payDetails: r['Payment Details']  || '',
+          center:     r['Center Name']      || ''
+        };
+      }).reverse(); // newest first
+      saveReceipts(receipts);
+      populateYearFilters();
+      renderHistory();
+    })
+    .catch(function() {});
 }
 
 function testConnection() {
   var url = document.getElementById('sheetUrl').value.trim();
   if (!url) { toast('⚠️ Please enter the Web App URL first'); return; }
-  var test = { num: 'TEST-001', date: new Date().toISOString().split('T')[0], monthLabel: 'Test', student: 'Connection Test', tuition: 0, book: 0, total: 0, method: 'Test', center: 'Test', tagline: '' };
-  fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(test) })
-    .then(function() { toast('✅ Sent! Check your Sheet for TEST-001'); updateSheetStatus(); })
-    .catch(function() { toast('❌ Could not reach the URL — check it'); });
+  toast('⏳ Testing...');
+  fetch(url)
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (data.ok) {
+        toast('✅ Connected! Loaded ' + (data.rows ? data.rows.length : 0) + ' receipts from Sheet');
+        saveSettings();
+        refreshFromSheet();
+      } else {
+        toast('❌ Connected but got unexpected response');
+      }
+    })
+    .catch(function() { toast('❌ Could not reach the URL — check it and redeploy'); });
 }
 
 function updateSheetStatus() {
@@ -602,18 +872,18 @@ function buildPrintHTML(r) {
   var bookRow = r.book > 0 ? '<tr><td>Book Fee</td><td>' + fmt(r.book) + '</td></tr>' : '';
   return '<div class="pr-top">' +
     '<div><div class="pr-center-name">' + r.center + '</div><div class="pr-center-sub">' + (r.tagline || 'Online Tuition Center') + '</div></div>' +
-    '<div><div class="pr-title">Receipt</div><div class="pr-num">' + r.num + '</div></div>' +
+    '<div class="pr-receipt-right"><div class="pr-title">Receipt</div><div class="pr-num">' + r.num + '</div></div>' +
     '</div>' +
     '<div class="pr-meta">' +
       '<div class="pr-meta-item"><label>Date</label><div class="v">' + fmtDate(r.date) + '</div></div>' +
-      '<div class="pr-meta-item"><label>Method</label><div class="v">' + r.method + '</div></div>' +
+      '<div class="pr-meta-item"><label>Payment method</label><div class="v">' + r.method + '</div></div>' +
     '</div>' +
-    (r.payDetails ? '<div class="pr-from" style="margin-top:-8px"><label>Payment details</label><div class="v" style="font-size:14px">' + r.payDetails + '</div></div>' : '') +
+    (r.payDetails ? '<div class="pr-from" style="margin-bottom:12px"><label>Payment details</label><div class="v">' + r.payDetails + '</div></div>' : '') +
     '<div class="pr-from"><label>Received from</label><div class="v">' + r.student + '</div></div>' +
     '<table class="pr-table"><thead><tr><th>Description</th><th>Amount</th></tr></thead><tbody>' +
       '<tr><td>Tuition Fee</td><td>' + fmt(r.tuition) + '</td></tr>' + bookRow +
     '</tbody></table>' +
-    '<div class="pr-total-row"><div class="pr-total-box"><span class="tl">Total</span><span class="ta">' + fmt(r.total) + '</span></div></div>' +
+    '<div class="pr-total-row"><div class="pr-total-box"><div class="pr-total-inner"><span class="tl">Total</span><span class="ta">' + fmt(r.total) + '</span></div></div></div>' +
     '<div class="pr-footer">' +
       '<div class="pr-note">This is an official receipt.<br>Please retain for your records.<br>Thank you for your payment.</div>' +
       '<div class="pr-sig"><div class="pr-sig-line"></div><div class="pr-sig-label">Authorised Signature</div></div>' +
