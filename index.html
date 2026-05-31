@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -286,6 +287,10 @@ body { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--i
 <div class="page" id="page-settings">
   <div class="sect-label">Center info</div>
   <div class="card">
+    <div style="background:var(--accent-bg);border:1px solid #b7e4c7;border-radius:10px;padding:9px 12px;font-size:12.5px;color:var(--accent);margin-bottom:12px;display:flex;gap:8px;align-items:flex-start;">
+      <span style="font-size:15px;flex-shrink:0">💡</span>
+      <span>These values are <strong style="font-weight:500">pre-loaded from your CONFIG</strong> in the file — they work on every device automatically. Edit here to override for this browser only.</span>
+    </div>
     <div class="settings-field">
       <label>Center / teacher name</label>
       <input type="text" id="centerName" placeholder="e.g. Cikgu Alia Online Tuition" oninput="saveSettings()">
@@ -343,6 +348,7 @@ body { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--i
   <div class="sect-label">Data</div>
   <div class="card">
     <button class="btn btn-outline" onclick="openCsvModal()" style="margin-bottom:8px">📄 Export receipts as CSV</button>
+    <button class="btn btn-outline" onclick="resetToConfig()" style="margin-bottom:8px;color:var(--accent);border-color:var(--accent-mid)">↺ Reset settings to file defaults</button>
     <button class="btn btn-danger btn-sm" onclick="clearAllData()">🗑 Clear all local data</button>
   </div>
 </div>
@@ -434,13 +440,36 @@ body { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--i
 <div id="printArea"></div>
 
 <script>
+// ════════════════════════════════════════════════
+//  ★  FILL IN YOUR DETAILS HERE — ONE TIME ONLY  ★
+//  These values will work on ALL devices and
+//  browsers automatically. No re-typing needed.
+// ════════════════════════════════════════════════
+var CONFIG = {
+  center:   'Your Tuition Center Name',   // e.g. 'Cikgu Alia Online Tuition'
+  tagline:  'Online Tuition Center',      // e.g. 'Online Tuition Center'
+  sheetUrl: ''                            // Paste your Apps Script Web App URL here
+};
+// ════════════════════════════════════════════════
+
 // ── STORAGE ──
 var STORE = 'tuition_app_v2';
 var SET_STORE = 'tuition_settings_v2';
 
 function getReceipts() { try { return JSON.parse(localStorage.getItem(STORE) || '[]'); } catch { return []; } }
 function saveReceipts(arr) { localStorage.setItem(STORE, JSON.stringify(arr)); }
-function getSettings() { try { return JSON.parse(localStorage.getItem(SET_STORE) || '{}'); } catch { return {}; } }
+
+// Settings: CONFIG values are the defaults; localStorage overrides if user edits in Settings tab
+function getSettings() {
+  try {
+    var stored = JSON.parse(localStorage.getItem(SET_STORE) || '{}');
+    return {
+      center:   stored.center   || CONFIG.center   || 'Tuition Center',
+      tagline:  stored.tagline  || CONFIG.tagline  || 'Online Tuition Center',
+      sheetUrl: stored.sheetUrl || CONFIG.sheetUrl || ''
+    };
+  } catch { return { center: CONFIG.center, tagline: CONFIG.tagline, sheetUrl: CONFIG.sheetUrl }; }
+}
 
 function saveSettings() {
   var s = { center: document.getElementById('centerName').value, tagline: document.getElementById('centerTagline').value, sheetUrl: document.getElementById('sheetUrl').value };
@@ -487,10 +516,11 @@ window.addEventListener('load', function() {
   document.getElementById('payMonthMonth').value = today.getMonth() + 1;
   document.getElementById('payMonthYear').value = today.getFullYear();
 
+  // Always load merged settings (CONFIG defaults + any local overrides)
   var s = getSettings();
-  if (s.center) document.getElementById('centerName').value = s.center;
-  if (s.tagline) document.getElementById('centerTagline').value = s.tagline;
-  if (s.sheetUrl) document.getElementById('sheetUrl').value = s.sheetUrl;
+  document.getElementById('centerName').value = s.center;
+  document.getElementById('centerTagline').value = s.tagline;
+  document.getElementById('sheetUrl').value = s.sheetUrl;
 
   updateSheetStatus();
   populateYearFilters();
@@ -521,8 +551,8 @@ function updateTotal() {
 function nextNum() {
   var receipts = getReceipts();
   var year = new Date().getFullYear();
-  var same = receipts.filter(function(r) { return r.num && r.num.indexOf('RCP-' + year + '-') === 0; });
-  return 'RCP-' + year + '-' + String(same.length + 1).padStart(3, '0');
+  var same = receipts.filter(function(r) { return r.num && r.num.indexOf('YHTRCP-' + year + '-') === 0; });
+  return 'YHTRCP-' + year + '-' + String(same.length + 1).padStart(3, '0');
 }
 
 function fmtDate(s) {
@@ -583,7 +613,8 @@ function updateSheetStatus() {
   var s = getSettings();
   var dot = document.getElementById('statusDot');
   var txt = document.getElementById('statusText');
-  if (s.sheetUrl && s.sheetUrl.includes('script.google.com')) { dot.classList.add('connected'); txt.textContent = 'Sheets connected'; }
+  var url = s.sheetUrl || CONFIG.sheetUrl || '';
+  if (url && url.includes('script.google.com')) { dot.classList.add('connected'); txt.textContent = 'Sheets connected'; }
   else { dot.classList.remove('connected'); txt.textContent = 'Setup Sheets'; }
 }
 
@@ -932,6 +963,15 @@ function toast(msg) {
 function copyScript() {
   var text = document.getElementById('appsScriptCode').textContent;
   navigator.clipboard.writeText(text).then(function() { toast('✅ Script copied!'); });
+}
+
+function resetToConfig() {
+  localStorage.removeItem(SET_STORE);
+  document.getElementById('centerName').value = CONFIG.center;
+  document.getElementById('centerTagline').value = CONFIG.tagline;
+  document.getElementById('sheetUrl').value = CONFIG.sheetUrl;
+  updateSheetStatus();
+  toast('↺ Settings reset to file defaults');
 }
 
 function clearAllData() {
